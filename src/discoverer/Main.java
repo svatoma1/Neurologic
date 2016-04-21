@@ -3,11 +3,17 @@ package discoverer;
 import discoverer.construction.template.LightTemplate;
 import discoverer.crossvalidation.NeuralCrossvalidation;
 import discoverer.crossvalidation.Crossvalidation;
+import discoverer.drawing.GroundDotter;
 import discoverer.global.Global;
 import discoverer.global.FileToStringList;
 import discoverer.global.Glogger;
 import discoverer.global.Settings;
+import discoverer.grounding.network.groundNetwork.AtomNeuron;
+import discoverer.grounding.network.groundNetwork.GroundNeuron;
+import discoverer.grounding.network.groundNetwork.RuleAggNeuron;
 import discoverer.learning.Sample;
+import discoverer.structureLearning.StructureLearning;
+import discoverer.structureLearning.StructureLearningFactory;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
@@ -15,6 +21,11 @@ import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Main class Params handling and calling appropriate methods
@@ -52,7 +63,9 @@ public class Main {
     private static String defaultSGD = "1";     // >0 => stochastic gradient descend is ON
     private static String defaultCumSteps = "0"; // "on" or number of steps, <= 0 => OFF
     private static String defaultLearnDecay = "0"; // >0 => learnRate decay strategy is ON
-    private static int maxReadline = 100000; //cut-of reading input files (not used)
+    public static int maxReadline = 100000; //cut-of reading input files (not used)
+
+    private static String defaultStructureLearningAlgorithm = "none"; // none, DNC, SLF, CasCor, TopGen, REGENT
 
     public static Options getOptions() {
         Options options = new Options();
@@ -184,6 +197,11 @@ public class Main {
         OptionBuilder.hasArg();
         options.addOption(OptionBuilder.create("lrd"));
 
+        OptionBuilder.withLongOpt("structureLearningAlgorithm");
+        OptionBuilder.withDescription("structure learning algorithm (default: " + defaultStructureLearningAlgorithm + " )");
+        OptionBuilder.hasArg();
+        options.addOption(OptionBuilder.create("sla"));
+
         return options;
     }
 
@@ -248,6 +266,7 @@ public class Main {
         }
 
         //we want sigmoid at the output, not identity (for proper error measurement)
+
         if (Global.getKappaActivation() == Global.activationSet.id) {
             if (rules[rules.length - 1].startsWith("0.") || rules[rules.length - 1].startsWith("1.")) {  //does it end with Kappa line?
                 rules = addFinalLambda(rules);  //a hack to end with lambda
@@ -266,11 +285,64 @@ public class Main {
         //create logger for all messages within the program
         Glogger.init();
 
+        //LiftedDataset groundedDataset = createDataset(test, exs, rules, pretrainedRules);
+        if(null == cmd.getOptionValue("sla") || defaultStructureLearningAlgorithm.equals(cmd.getOptionValue("sla"))){
+            noStructureLearningLearning(exs, test, rules, pretrainedRules);
+        }else{
+            StructureLearning sl = StructureLearningFactory.create(exs, test, rules, pretrainedRules, cmd, args);
+            sl.learn();
+        }
+    }
+
+    private static void noStructureLearningLearning(String[] exs, String[] test, String[] rules, String[] pretrainedRules) {
         //create ground networks dataset
+        //start learning
         LiftedDataset groundedDataset = createDataset(test, exs, rules, pretrainedRules);
 
-        //start learning
+        groundedDataset.sampleSplitter.testFold = 0;
+        Set<Sample> samples = new HashSet<>(groundedDataset.sampleSplitter.getTest());
+        samples.addAll(groundedDataset.sampleSplitter.getTrain());
+
+
+
+        samples.forEach(sample -> {
+            System.out.println(sample);
+            System.out.println(sample.neuralNetwork);
+
+            if(Global.fastVersion){
+                process(sample.neuralNetwork.outputNeuron,"");
+            }else{
+                GroundDotter.drawAVG(sample.getBall(),"male");
+            }
+
+        });
+
+        System.exit(-1111);
+
         learnOn(groundedDataset);
+    }
+
+    private static void process(GroundNeuron neuron, String indent) {
+        String nextIndent = indent + "\t";
+        if(neuron instanceof RuleAggNeuron){
+            RuleAggNeuron aggreg = (RuleAggNeuron) neuron;
+            System.out.println(indent + "aggreg\t" + aggreg.inputNeuronsCompressed.length + "\t" + aggreg);
+
+            for (int i = 0; i < aggreg.inputNeuronCompressedCounts.length; i++) {
+                process(aggreg.inputNeuronsCompressed[i],nextIndent);
+            }
+
+        }else if(neuron instanceof AtomNeuron){
+            AtomNeuron atom = (AtomNeuron) neuron;
+            System.out.println(indent + "atom\t" + atom.inputNeurons.length + "\t" + atom);
+
+            for (int i = 0; i < atom.inputNeurons.length; i++) {
+                process(atom.inputNeurons[i],nextIndent);
+            }
+
+        }else{
+            System.out.println("unknown type\t" + neuron);
+        }
     }
 
     public static void setParameters(CommandLine cmd) throws NumberFormatException {
@@ -340,7 +412,7 @@ public class Main {
      * @param rules
      * @param pretrainedRules
      */
-    static LiftedDataset createDataset(String[] test, String[] exs, String[] rules, String[] pretrainedRules) {
+    public static LiftedDataset createDataset(String[] test, String[] exs, String[] rules, String[] pretrainedRules) {
 
         //Glogger.process(Settings.getString());
         //---------------dataset-sample set creation
@@ -407,7 +479,7 @@ public class Main {
      * @param rules
      * @return
      */
-    private static String[] addFinalLambda(String[] rules) {
+    public static String[] addFinalLambda(String[] rules) {
 
         String[] rls = new String[rules.length + 1];
         for (int i = 0; i < rules.length; i++) {
