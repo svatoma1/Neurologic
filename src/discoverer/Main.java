@@ -3,17 +3,13 @@ package discoverer;
 import discoverer.construction.template.LightTemplate;
 import discoverer.crossvalidation.NeuralCrossvalidation;
 import discoverer.crossvalidation.Crossvalidation;
-import discoverer.drawing.GroundDotter;
 import discoverer.global.Global;
 import discoverer.global.FileToStringList;
 import discoverer.global.Glogger;
 import discoverer.global.Settings;
-import discoverer.grounding.network.groundNetwork.AtomNeuron;
-import discoverer.grounding.network.groundNetwork.GroundNeuron;
-import discoverer.grounding.network.groundNetwork.RuleAggNeuron;
 import discoverer.learning.Sample;
-import discoverer.structureLearning.StructureLearning;
-import discoverer.structureLearning.StructureLearningFactory;
+import java.util.LinkedList;
+import java.util.List;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
@@ -22,18 +18,13 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 /**
  * Main class Params handling and calling appropriate methods
  */
 public class Main {
 
     //cutoff on example number
-    private static final String defaultMaxExamples = "10";  //we can decrease the overall number of examples (stratified) for speedup
+    private static final String defaultMaxExamples = "10000";  //we can decrease the overall number of examples (stratified) for speedup
     //
     public static String defaultLearningSteps = "1000";  //learnSteps per epocha
     public static String defaultLearningEpochs = "1";  //learn epochae = grounding cycles
@@ -63,9 +54,7 @@ public class Main {
     private static String defaultSGD = "1";     // >0 => stochastic gradient descend is ON
     private static String defaultCumSteps = "0"; // "on" or number of steps, <= 0 => OFF
     private static String defaultLearnDecay = "0"; // >0 => learnRate decay strategy is ON
-    public static int maxReadline = 100000; //cut-of reading input files (not used)
-
-    private static String defaultStructureLearningAlgorithm = "none"; // none, DNC, SLF, CasCor, TopGen, REGENT
+    private static int maxReadline = 100000; //cut-of reading input files (not used)
 
     public static Options getOptions() {
         Options options = new Options();
@@ -197,11 +186,6 @@ public class Main {
         OptionBuilder.hasArg();
         options.addOption(OptionBuilder.create("lrd"));
 
-        OptionBuilder.withLongOpt("structureLearningAlgorithm");
-        OptionBuilder.withDescription("structure learning algorithm (default: " + defaultStructureLearningAlgorithm + " )");
-        OptionBuilder.hasArg();
-        options.addOption(OptionBuilder.create("sla"));
-
         return options;
     }
 
@@ -226,125 +210,29 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        CommandLine cmd = parseArguments(args);
-        if (cmd == null) {
-            return;
-        }
-
-        setParameters(cmd);
-
-        //---------------------loading all input files
-        //get examples from file
-        String dataset = cmd.getOptionValue("e");
-        Settings.setDataset(dataset);
-        String[] exs = null;
-        if (Global.multiLine) {
-            exs = FileToStringList.convertMultiline(dataset, maxReadline);
-        } else {
-            exs = FileToStringList.convert(dataset, maxReadline);
-        }
-
-        if (exs.length == 0) {
-            Glogger.err("no examples");
-            return;
-        }
-
-        //separate test set?
-        String[] test = null;
-        String tt = cmd.getOptionValue("test");
-        if (tt != null) {
-            Settings.setTestSet(tt);
-            test = FileToStringList.convert(tt, maxReadline);
-        }
-
-        //get rules one by one from a file
-        String rls = cmd.getOptionValue("r");
-        Settings.setRules(rls);
-        String[] rules = FileToStringList.convert(rls, maxReadline);
-        if (rules.length == 0) {
-            Glogger.err("no rules");
-        }
-
-        //we want sigmoid at the output, not identity (for proper error measurement)
-
-        if (Global.getKappaActivation() == Global.activationSet.id) {
-            if (rules[rules.length - 1].startsWith("0.") || rules[rules.length - 1].startsWith("1.")) {  //does it end with Kappa line?
-                rules = addFinalLambda(rules);  //a hack to end with lambda
-            }
-        }
-
-        //pretrained template with some lifted literals in common (will be mapped onto new template)
-        String pretrained = cmd.getOptionValue("t");
-        Settings.setPretrained(pretrained);
-        String[] pretrainedRules = FileToStringList.convert(pretrained, maxReadline);
-        if (pretrainedRules != null) {
-            Glogger.out("pretrained= " + pretrained + " of length: " + pretrainedRules.length);
-        }
-
-        //-------------------------------------end of parameter parsing-------------------------------------------
+        //setup all parameters and load all the necessary input files
+        List<String[]> inputs = setupFromArguments(args);
         //create logger for all messages within the program
         Glogger.init();
 
-        //LiftedDataset groundedDataset = createDataset(test, exs, rules, pretrainedRules);
-        if(null == cmd.getOptionValue("sla") || defaultStructureLearningAlgorithm.equals(cmd.getOptionValue("sla"))){
-            noStructureLearningLearning(exs, test, rules, pretrainedRules);
-        }else{
-            StructureLearning sl = StructureLearningFactory.create(exs, test, rules, pretrainedRules, cmd, args);
-            sl.learn();
-        }
-    }
+        String[] test = inputs.get(0);
+        String[] exs = inputs.get(1);
+        String[] rules = inputs.get(2);
+        String[] pretrainedRules = inputs.get(3);
 
-    private static void noStructureLearningLearning(String[] exs, String[] test, String[] rules, String[] pretrainedRules) {
         //create ground networks dataset
-        //start learning
         LiftedDataset groundedDataset = createDataset(test, exs, rules, pretrainedRules);
 
-        groundedDataset.sampleSplitter.testFold = 0;
-        Set<Sample> samples = new HashSet<>(groundedDataset.sampleSplitter.getTest());
-        samples.addAll(groundedDataset.sampleSplitter.getTrain());
-
-
-
-        samples.forEach(sample -> {
-            System.out.println(sample);
-            System.out.println(sample.neuralNetwork);
-
-            if(Global.fastVersion){
-                process(sample.neuralNetwork.outputNeuron,"");
-            }else{
-                GroundDotter.drawAVG(sample.getBall(),"male");
-            }
-
-        });
-
-        System.exit(-1111);
-
+        //start learning
         learnOn(groundedDataset);
     }
 
-    private static void process(GroundNeuron neuron, String indent) {
-        String nextIndent = indent + "\t";
-        if(neuron instanceof RuleAggNeuron){
-            RuleAggNeuron aggreg = (RuleAggNeuron) neuron;
-            System.out.println(indent + "aggreg\t" + aggreg.inputNeuronsCompressed.length + "\t" + aggreg);
-
-            for (int i = 0; i < aggreg.inputNeuronCompressedCounts.length; i++) {
-                process(aggreg.inputNeuronsCompressed[i],nextIndent);
-            }
-
-        }else if(neuron instanceof AtomNeuron){
-            AtomNeuron atom = (AtomNeuron) neuron;
-            System.out.println(indent + "atom\t" + atom.inputNeurons.length + "\t" + atom);
-
-            for (int i = 0; i < atom.inputNeurons.length; i++) {
-                process(atom.inputNeurons[i],nextIndent);
-            }
-
-        }else{
-            System.out.println("unknown type\t" + neuron);
-        }
-    }
-
+    /**
+     * parse commandline for all possible parameters
+     *
+     * @param cmd
+     * @throws NumberFormatException
+     */
     public static void setParameters(CommandLine cmd) throws NumberFormatException {
         //parsing command line options - needs external library commons-CLI
         String ground = cmd.getOptionValue("gr", defaultGrounding);
@@ -383,7 +271,6 @@ public class Main {
         Settings.setLrDecay(decay);
 
         //Global.batchMode = cmd.hasOption("b");
-
         String tmp = cmd.getOptionValue("size", defaultMaxExamples);
         Settings.setMaxExamples(Integer.parseInt(tmp));
 
@@ -411,6 +298,7 @@ public class Main {
      * @param exs
      * @param rules
      * @param pretrainedRules
+     * @return 
      */
     public static LiftedDataset createDataset(String[] test, String[] exs, String[] rules, String[] pretrainedRules) {
 
@@ -479,7 +367,7 @@ public class Main {
      * @param rules
      * @return
      */
-    public static String[] addFinalLambda(String[] rules) {
+    private static String[] addFinalLambda(String[] rules) {
 
         String[] rls = new String[rules.length + 1];
         for (int i = 0; i < rules.length; i++) {
@@ -489,5 +377,88 @@ public class Main {
         rls[rls.length - 1] = "finalLambda :- " + fin + ".";
 
         return rls;
+    }
+
+    /**
+     * setup all parameters and load all the necessary input files
+     *
+     * @param args
+     * @return
+     */
+    public static List<String[]> setupFromArguments(String[] args) {
+        List<String[]> inputs = new LinkedList<>();
+
+        CommandLine cmd = parseArguments(args);
+        if (cmd == null) {
+            return null;
+        }
+
+        setParameters(cmd);
+
+        //---------------------loading all input files
+        //get examples from file
+        String dataset = cmd.getOptionValue("e");
+
+        String[] exs = getExamples(dataset);
+
+        //separate test set?
+        String[] test = null;
+        String tt = cmd.getOptionValue("test");
+        if (tt != null) {
+            Settings.setTestSet(tt);
+            test = FileToStringList.convert(tt, maxReadline);
+        }
+
+        //get rules one by one from a file
+        String rls = cmd.getOptionValue("r");
+        Settings.setRules(rls);
+        String[] rules = FileToStringList.convert(rls, maxReadline);
+        if (rules.length == 0) {
+            Glogger.err("no rules");
+        }
+
+        //we want sigmoid at the output, not identity (for proper error measurement)
+        if (Global.getKappaActivation() == Global.activationSet.id) {
+            if (rules[rules.length - 1].matches("^[0-9\\.]+.*")) {  //does it end with Kappa line?
+                rules = addFinalLambda(rules);  //a hack to end with lambda
+            }
+        }
+
+        //pretrained template with some lifted literals in common (will be mapped onto new template)
+        String pretrained = cmd.getOptionValue("t");
+        Settings.setPretrained(pretrained);
+        String[] pretrainedRules = FileToStringList.convert(pretrained, maxReadline);
+        if (pretrainedRules != null) {
+            Glogger.out("pretrained= " + pretrained + " of length: " + pretrainedRules.length);
+        }
+
+        inputs.add(test);
+        inputs.add(exs);
+        inputs.add(rules);
+        inputs.add(pretrainedRules);
+
+        return inputs;
+    }
+
+    /**
+     * load examples from a file
+     *
+     * @param exampleFile
+     * @return
+     */
+    public static String[] getExamples(String exampleFile) {
+        String[] exs = null;
+        Settings.setDataset(exampleFile);
+        if (Global.multiLine) {
+            exs = FileToStringList.convertMultiline(exampleFile, maxReadline);
+        } else {
+            exs = FileToStringList.convert(exampleFile, maxReadline);
+        }
+
+        if (exs.length == 0) {
+            Glogger.err("no examples");
+            return null;
+        }
+        return exs;
     }
 }
