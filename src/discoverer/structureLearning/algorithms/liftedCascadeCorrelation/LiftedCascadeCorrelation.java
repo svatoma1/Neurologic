@@ -66,41 +66,34 @@ public class LiftedCascadeCorrelation implements StructureLearning {
         template.addAll(RuleTools.constructNodeOutputNodes(basePredicates, finalRulePredicate, orRuleWeight));
 
 
-        //grounded = regrounder.reGroundMe(grounded, template);
+        grounded = regrounder.reGroundMe(grounded, template);
 
         long numberOfAddedPredicates = 0;
         List<Double> errors = new ArrayList<>();
 
-        while (true) {
-            //grounded = weightLearner.backprop(grounded, grounded.network.sharedWeights, "CasCor"); // only output weights
-
-            double currentError = 1000.0;
-            //double currentError = Evaluate.computeAverageSquaredTrainTotalError(grounded);
-            errors.add(currentError);
-
-            if (stopCascadeCorrelation(numberOfAddedPredicates, errors)) {
-                break;
-            }
-
-            final LiftedDataset finalGrounded = grounded;
-            CandidateWrapper bestCandidate = LongStream.range(0, POOL_SIZE)
-                    //.parallel()
-                    .mapToObj(i -> makeAndLearnCandidate(finalGrounded, regrounder, new ArrayList<>(template), basePredicates, new HashSet<>(templateLambdaHeads), finalRulePredicate))
-                    .max(CandidateWrapper::compare)
-                    .get();
-
-            templateLambdaHeads.add(bestCandidate.getPredicate());
-            template.addAll(bestCandidate.getRules());
-
-            numberOfAddedPredicates++;
-
-            System.out.println("iteration\t" +numberOfAddedPredicates);
-            template.forEach(e -> System.out.println("\t" + e));
-
-            if(numberOfAddedPredicates > 2){
-                break;
-            }
-        }
+//        while (true) {
+//            grounded = weightLearner.backprop(grounded, grounded.network.sharedWeights, "CasCor"); // only output weights
+//
+//            //double currentError = 1000.0;
+//            double currentError = Evaluate.computeAverageSquaredTrainTotalError(grounded);
+//            errors.add(currentError);
+//
+//            if (stopCascadeCorrelation(numberOfAddedPredicates, errors)) {
+//                break;
+//            }
+//
+//            final LiftedDataset finalGrounded = grounded;
+//            CandidateWrapper bestCandidate = LongStream.range(0, POOL_SIZE)
+//                    //.parallel()
+//                    .mapToObj(i -> makeAndLearnCandidate(finalGrounded, regrounder, new ArrayList<>(template), basePredicates, new HashSet<>(templateLambdaHeads), finalRulePredicate))
+//                    .max(CandidateWrapper::compare)
+//                    .get();
+//
+//            templateLambdaHeads.add(bestCandidate.getPredicate());
+//            template.addAll(bestCandidate.getRules());
+//
+//            numberOfAddedPredicates++;
+//        }
 
         System.out.println("learned with added predicates: " + grounded);
     }
@@ -120,14 +113,16 @@ public class LiftedCascadeCorrelation implements StructureLearning {
         Predicate predicate = generated.getKey();
         List<String> extension = generated.getValue();
         extension.add(RuleTools.constructOrRuleWithZeroArity(finalRulePredicate, predicate, weight));
-        //LiftedDataset candidateGrounded = regrounder.reGroundMe(grounded, extension);
-        LiftedDataset candidateGrounded = null;
+        LiftedDataset candidateGrounded = regrounder.reGroundMe(grounded, extension);
 
 
         // learning phase -> todo, learn connection added (leading to predicate node); thereafter transfer those weights to newRules list
         // gradient ascent + zafixovani vah
 
-        List<String> newRules = new ArrayList<>(extension); // TODO
+
+
+
+        List<String> newRules = new ArrayList<>(); // TODO
         double correlation = 0.0d;
         // TODO - tady jeste predat vahy z naucenych do newRules
 

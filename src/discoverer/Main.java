@@ -8,8 +8,12 @@ import discoverer.global.FileToStringList;
 import discoverer.global.Glogger;
 import discoverer.global.Settings;
 import discoverer.learning.Sample;
+
 import java.util.LinkedList;
 import java.util.List;
+
+import discoverer.structureLearning.StructureLearning;
+import discoverer.structureLearning.StructureLearningFactory;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
@@ -55,6 +59,8 @@ public class Main {
     private static String defaultCumSteps = "0"; // "on" or number of steps, <= 0 => OFF
     private static String defaultLearnDecay = "0"; // >0 => learnRate decay strategy is ON
     private static int maxReadline = 100000; //cut-of reading input files (not used)
+
+    private static String defaultStructureLearningAlgorithm = "none";
 
     public static Options getOptions() {
         Options options = new Options();
@@ -186,6 +192,11 @@ public class Main {
         OptionBuilder.hasArg();
         options.addOption(OptionBuilder.create("lrd"));
 
+        OptionBuilder.withLongOpt("structureLearningAlgorithm");
+        OptionBuilder.withDescription("structure learning algorithm (default: " + defaultStructureLearningAlgorithm + " )");
+        OptionBuilder.hasArg();
+        options.addOption(OptionBuilder.create("sla"));
+
         return options;
     }
 
@@ -220,6 +231,19 @@ public class Main {
         String[] rules = inputs.get(2);
         String[] pretrainedRules = inputs.get(3);
 
+
+        CommandLine cmd = parseArguments(args);
+        if (null == cmd.getOptionValue("sla") || defaultStructureLearningAlgorithm.equals(cmd.getOptionValue("sla"))) {
+            noStructureLearningLearning(exs, test, rules, pretrainedRules);
+        } else {
+            StructureLearning sl = StructureLearningFactory.create(exs, test, rules, pretrainedRules, cmd, args);
+            sl.learn();
+        }
+
+
+    }
+
+    private static void noStructureLearningLearning(String[] exs, String[] test, String[] rules, String[] pretrainedRules) {
         //create ground networks dataset
         LiftedDataset groundedDataset = createDataset(test, exs, rules, pretrainedRules);
 
@@ -298,7 +322,7 @@ public class Main {
      * @param exs
      * @param rules
      * @param pretrainedRules
-     * @return 
+     * @return
      */
     public static LiftedDataset createDataset(String[] test, String[] exs, String[] rules, String[] pretrainedRules) {
 
