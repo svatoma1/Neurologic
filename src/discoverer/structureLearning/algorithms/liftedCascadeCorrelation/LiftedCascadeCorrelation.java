@@ -120,8 +120,6 @@ public class LiftedCascadeCorrelation implements StructureLearning {
         // gradient ascent + zafixovani vah
 
 
-
-
         List<String> newRules = new ArrayList<>(); // TODO
         double correlation = 0.0d;
         // TODO - tady jeste predat vahy z naucenych do newRules
