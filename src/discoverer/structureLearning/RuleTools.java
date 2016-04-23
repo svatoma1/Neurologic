@@ -65,7 +65,7 @@ public class RuleTools {
         allPredicates.addAll(templatePredicates);
         String freshName = generateFreshName(allPredicates);
 
-        double baseWeight = 0.0;
+        double baseWeight = 0.5;
         List<String> rules = basePredicates.stream()
                 .map(predicate -> constructOrRuleWithZeroArity(freshName, predicate, baseWeight))
                 .collect(Collectors.toCollection(ArrayList::new));
@@ -73,6 +73,7 @@ public class RuleTools {
     }
 
     public static String constructOrRuleWithZeroArity(String freshName, Predicate predicate, double baseWeight) {
+        // TODO change baseWeight to WeightInitializer
         return baseWeight + " " + freshName + " :- " + freshPredicate(predicate) + ".";
     }
 
@@ -103,9 +104,10 @@ public class RuleTools {
     private static String generateFreshName(Set<Predicate> predicates) {
         Set<String> set = predicates.stream().map(predicate -> predicate.getName()).collect(Collectors.toSet());
 
+        String kappaToken = "Kappa";
         String ruleName = "atom";
         long longCounter = (long) set.size();
-        while (set.contains(ruleName + longCounter)) {
+        while (set.contains(ruleName + longCounter ) || set.contains(ruleName + longCounter + kappaToken )) {
             longCounter++;
         }
         return ruleName + longCounter;

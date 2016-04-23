@@ -28,9 +28,9 @@ public class DummyInitable implements Initable {
         Settings.setDataset(dataset);
         String[] exs = null;
         if (Global.multiLine) {
-            exs = FileToStringList.convertMultiline(dataset, Main.maxReadline);
+            exs = FileToStringList.convertMultiline(dataset, 10000);
         } else {
-            exs = FileToStringList.convert(dataset, Main.maxReadline);
+            exs = FileToStringList.convert(dataset, 10000);
         }
 
         if (exs.length == 0) {
@@ -43,13 +43,13 @@ public class DummyInitable implements Initable {
         String tt = cmd.getOptionValue("test");
         if (tt != null) {
             Settings.setTestSet(tt);
-            test = FileToStringList.convert(tt, Main.maxReadline);
+            test = FileToStringList.convert(tt, 10000);
         }
 
         //get rules one by one from a file
         String rls = cmd.getOptionValue("r");
         Settings.setRules(rls);
-        String[] rules = FileToStringList.convert(rls, Main.maxReadline);
+        String[] rules = FileToStringList.convert(rls, 10000);
         if (rules.length == 0) {
             Glogger.err("no rules");
         }
@@ -66,7 +66,7 @@ public class DummyInitable implements Initable {
         //pretrained template with some lifted literals in common (will be mapped onto new template)
         String pretrained = cmd.getOptionValue("t");
         Settings.setPretrained(pretrained);
-        String[] pretrainedRules = FileToStringList.convert(pretrained, Main.maxReadline);
+        String[] pretrainedRules = FileToStringList.convert(pretrained, 10000);
         if (pretrainedRules != null) {
             Glogger.out("pretrained= " + pretrained + " of length: " + pretrainedRules.length);
         }

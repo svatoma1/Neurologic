@@ -1,3 +1,4 @@
-sibling(X,Y) :- male(X),male(Y).
-finalKappa(X) :- sibling(X,Y).
-finalLambda :- finalKappa(X).
+atom1 :- male(X0).
+atom1Lambda :- atom1.
+finalKappa :- atom1Lambda.
+finalLambda :- finalKappa.

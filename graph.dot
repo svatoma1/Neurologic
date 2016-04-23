@@ -1,60 +1,82 @@
 digraph G {
-"finalLambda)#6
-valAvg: 0,386376289119583
-#ground: 2" -> "finalKappa(adam)#1
-valAVG: 0,5374298453437496
-offset: 0,1" [ label = "1x" ];
-"finalKappa(adam)#1
-valAVG: 0,5374298453437496
-offset: 0,1" -> "kapR{[sibling(0,1)#4, sibling(0,0)#2]}" [ label = "0,1" ];
-"kapR{[sibling(0,1)#4, sibling(0,0)#2]}" -> "sibling(adam,sid)#4
+"finalLambda)#8
+valAvg: 0,36163525968101473
+#ground: 2" -> "finalKappa(sid)#9
+valAVG: 0,4317263206636275
+offset: 0,17326589637132628" [ label = "1x" ];
+"finalKappa(sid)#9
+valAVG: 0,4317263206636275
+offset: 0,17326589637132628" -> "kapR{[sibling(1,0)#10, sibling(1,1)#11]}" [ label = "0,3034551546879154" ];
+"kapR{[sibling(1,0)#10, sibling(1,1)#11]}" -> "sibling(sid,adam)#10
 valAvg: 0,5
 #ground: 1" [ label = "1x" ];
-"kapR{[sibling(0,1)#4, sibling(0,0)#2]}" -> "sibling(adam,adam)#2
+"kapR{[sibling(1,0)#10, sibling(1,1)#11]}" -> "sibling(sid,sid)#11
 valAvg: 0,5
 #ground: 1" [ label = "1x" ];
-"sibling(adam,sid)#4
+"finalKappa(sid)#9
+valAVG: 0,4317263206636275
+offset: 0,17326589637132628" -> "kapR{[atom)#7]}" [ label = "0,21346569389668701" ];
+"kapR{[atom)#7]}" -> "atom)#7
 valAvg: 0,5
-#ground: 1" -> "male(sid)#5
-valAVG: 1
-offset: N/A" [ label = "1x" ];
-"sibling(adam,sid)#4
+#ground: 2" [ label = "1x" ];
+"sibling(sid,adam)#10
 valAvg: 0,5
 #ground: 1" -> "male(adam)#3
 valAVG: 1
 offset: N/A" [ label = "1x" ];
+"sibling(sid,adam)#10
+valAvg: 0,5
+#ground: 1" -> "male(sid)#5
+valAVG: 1
+offset: N/A" [ label = "1x" ];
+"sibling(sid,sid)#11
+valAvg: 0,5
+#ground: 1" -> "male(sid)#5
+valAVG: 1
+offset: N/A" [ label = "2x" ];
+"atom)#7
+valAvg: 0,5
+#ground: 2" -> "male(adam)#3
+valAVG: 1
+offset: N/A" [ label = "1x" ];
+"atom)#7
+valAvg: 0,5
+#ground: 2" -> "male(sid)#5
+valAVG: 1
+offset: N/A" [ label = "1x" ];
+"finalLambda)#8
+valAvg: 0,36163525968101473
+#ground: 2" -> "finalKappa(adam)#1
+valAVG: 0,4317263206636275
+offset: 0,17326589637132628" [ label = "1x" ];
+"finalKappa(adam)#1
+valAVG: 0,4317263206636275
+offset: 0,17326589637132628" -> "kapR{[sibling(0,0)#2, sibling(0,1)#4]}" [ label = "0,3034551546879154" ];
+"kapR{[sibling(0,0)#2, sibling(0,1)#4]}" -> "sibling(adam,adam)#2
+valAvg: 0,5
+#ground: 1" [ label = "1x" ];
+"kapR{[sibling(0,0)#2, sibling(0,1)#4]}" -> "sibling(adam,sid)#4
+valAvg: 0,5
+#ground: 1" [ label = "1x" ];
+"finalKappa(adam)#1
+valAVG: 0,4317263206636275
+offset: 0,17326589637132628" -> "kapR{[atom)#7]}" [ label = "0,21346569389668701" ];
+"kapR{[atom)#7]}" -> "atom)#7
+valAvg: 0,5
+#ground: 2" [ label = "1x" ];
 "sibling(adam,adam)#2
 valAvg: 0,5
 #ground: 1" -> "male(adam)#3
 valAVG: 1
 offset: N/A" [ label = "2x" ];
-"finalLambda)#6
-valAvg: 0,386376289119583
-#ground: 2" -> "finalKappa(sid)#7
-valAVG: 0,5374298453437496
-offset: 0,1" [ label = "1x" ];
-"finalKappa(sid)#7
-valAVG: 0,5374298453437496
-offset: 0,1" -> "kapR{[sibling(1,1)#9, sibling(1,0)#8]}" [ label = "0,1" ];
-"kapR{[sibling(1,1)#9, sibling(1,0)#8]}" -> "sibling(sid,sid)#9
-valAvg: 0,5
-#ground: 1" [ label = "1x" ];
-"kapR{[sibling(1,1)#9, sibling(1,0)#8]}" -> "sibling(sid,adam)#8
-valAvg: 0,5
-#ground: 1" [ label = "1x" ];
-"sibling(sid,sid)#9
-valAvg: 0,5
-#ground: 1" -> "male(sid)#5
-valAVG: 1
-offset: N/A" [ label = "2x" ];
-"sibling(sid,adam)#8
-valAvg: 0,5
-#ground: 1" -> "male(sid)#5
-valAVG: 1
-offset: N/A" [ label = "1x" ];
-"sibling(sid,adam)#8
+"sibling(adam,sid)#4
 valAvg: 0,5
 #ground: 1" -> "male(adam)#3
+valAVG: 1
+offset: N/A" [ label = "1x" ];
+"sibling(adam,sid)#4
+valAvg: 0,5
+#ground: 1" -> "male(sid)#5
 valAVG: 1
 offset: N/A" [ label = "1x" ];
 }

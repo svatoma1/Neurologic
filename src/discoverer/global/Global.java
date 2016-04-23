@@ -71,7 +71,7 @@ public final class Global {
     public static boolean loadGroundedDataset = false;
     public static boolean uncompressedLambda = false;
     public static boolean fastVersion = true;
-    public static boolean memoryLight = true;  //saves 60% by removing groundKL structures (keeps only neural), makes sense with fastVersion on only
+    public static boolean memoryLight = false;  //saves 60% by removing groundKL structures (keeps only neural), makes sense with fastVersion on only
     public static boolean molecularTemplates = true;
 
     public static boolean multiLine = false; //example can spread to multiple lines, delimited by empty line (\n\n)

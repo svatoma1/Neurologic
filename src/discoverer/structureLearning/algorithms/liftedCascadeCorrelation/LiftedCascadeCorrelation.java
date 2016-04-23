@@ -2,23 +2,28 @@ package discoverer.structureLearning.algorithms.liftedCascadeCorrelation;
 
 import discoverer.LiftedDataset;
 import discoverer.bridge.*;
+import discoverer.grounding.network.GroundKappa;
+import discoverer.grounding.network.GroundLambda;
+import discoverer.grounding.network.groundNetwork.GroundNeuron;
+import discoverer.learning.Sample;
+import discoverer.learning.Weights;
 import discoverer.structureLearning.RuleTools;
-import discoverer.structureLearning.StructureLearning;
-import discoverer.structureLearning.algorithms.ruleGenerator.BaseRuleGenerator;
+import discoverer.structureLearning.StructureLearnable;
 import discoverer.structureLearning.algorithms.ruleGenerator.CascadeRuleGenerator;
 import discoverer.structureLearning.algorithms.ruleGenerator.RuleGenerator;
 import discoverer.structureLearning.logic.Predicate;
 import discoverer.structureLearning.tools.Tools;
 import javafx.util.Pair;
 import org.apache.commons.cli.CommandLine;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.*;
-import java.util.stream.LongStream;
+import java.util.stream.Collectors;
 
 /**
  * Created by EL on 19.4.2016.
  */
-public class LiftedCascadeCorrelation implements StructureLearning {
+public class LiftedCascadeCorrelation implements StructureLearnable {
 
     // TODO parametrize
     private final long RULES_LIMIT = 50;
@@ -65,6 +70,43 @@ public class LiftedCascadeCorrelation implements StructureLearning {
         Set<Predicate> basePredicates = RuleTools.retrievePredicates(exs);
         template.addAll(RuleTools.constructNodeOutputNodes(basePredicates, finalRulePredicate, orRuleWeight));
 
+        grounded.sampleSplitter.samples.forEach(sample -> {
+            System.out.println("" + sample.neuralNetwork.allNeurons + "\t" + sample.neuralNetwork.allNeurons.length);
+
+
+            //GroundDotter.drawAVG(sample.getBall(),"atom");
+
+            for (int idx = 0; idx < sample.neuralNetwork.allNeurons.length; idx++) {
+                GroundNeuron neuron = sample.neuralNetwork.allNeurons[idx];
+                if (null != neuron) {
+                    System.out.println(idx + "\t" + neuron);
+                }
+            }
+
+            sample.getBall().groundNeurons.forEach(s -> {
+                System.out.println(s.getId());
+
+                if (s instanceof GroundKappa) {
+                    System.out.println("\tkappa");
+                    GroundKappa kappa = (GroundKappa) s;
+                    System.out.println("\t" + kappa.toString());
+
+
+                } else if (s instanceof GroundLambda) {
+                    System.out.println("\tlambda");
+                    GroundLambda lambda = (GroundLambda) s;
+                    System.out.println("\t" + lambda.toString());
+                    lambda.getConjuncts().forEach(e -> System.out.println("\t\t" + e.toString()));
+
+                } else {
+                    System.out.println("\t" + s.getClass());
+                }
+            });
+
+        });
+
+        System.exit(-1111);
+        //
 
         grounded = regrounder.reGroundMe(grounded, template);
 
@@ -109,22 +151,64 @@ public class LiftedCascadeCorrelation implements StructureLearning {
         // making
         Pair<Predicate, List<String>> generated = generator.generateRules(templateLambdaHeads, basePredicates, template);
 
-        double weight = 0.0d;
+        double weight = 0.0d;// misto toho taky weightInitializer
         Predicate predicate = generated.getKey();
         List<String> extension = generated.getValue();
         extension.add(RuleTools.constructOrRuleWithZeroArity(finalRulePredicate, predicate, weight));
         LiftedDataset candidateGrounded = regrounder.reGroundMe(grounded, extension);
 
+        // learning
+        Pair<Double, List<String>> learned = gradientAscent(candidateGrounded, predicate);
 
-        // learning phase -> todo, learn connection added (leading to predicate node); thereafter transfer those weights to newRules list
-        // gradient ascent + zafixovani vah
-
-
-        List<String> newRules = new ArrayList<>(); // TODO
-        double correlation = 0.0d;
-        // TODO - tady jeste predat vahy z naucenych do newRules
+        List<String> newRules = learned.getValue(); // TODO
+        double correlation = learned.getKey();
 
         return new CandidateWrapper(predicate, newRules, correlation, candidateGrounded);
+    }
+
+    private Pair<Double, List<String>> gradientAscent(LiftedDataset candidateGrounded, Predicate lambdaPredicate) {
+        List<Sample> samples = candidateGrounded.sampleSplitter.samples; // TODO select which ones
+        Map<Sample, GroundLambda> sampleLambda = retrieveLambdas(samples, lambdaPredicate);
+        Map<Sample, Set<Weights>> sampleWeight = retrieveWeights(samples, sampleLambda);
+        //return new Pair<>(correlation,null);
+        return null;
+    }
+
+    private Map<Sample, Set<Weights>> retrieveWeights(List<Sample> samples, Map<Sample, GroundLambda> sampleLambda) {
+        Map<Sample, Set<Weights>> mapping = new HashMap<>();
+        samples.forEach(sample -> mapping.put(sample, retrieveWeight(sample, sampleLambda.get(sample))));
+        return mapping;
+    }
+
+    private Set<Weights> retrieveWeight(Sample sample, GroundLambda lambda) {
+        //lambda.
+        throw new NotImplementedException();
+    }
+
+    private Map<Sample, GroundLambda> retrieveLambdas(List<Sample> samples, Predicate lambdaPredicate) {
+        Map<Sample, GroundLambda> mapping = new HashMap<>();
+
+        int kappaLength = "Kappa".length();
+        String rootName = lambdaPredicate.getName().substring(0, lambdaPredicate.getName().length() - kappaLength);
+        String notNulArityName = rootName + "(";
+        String closingBracket = rootName + ")#";
+        String hashtagOnly = rootName + "#";
+
+        samples.forEach(sample -> mapping.put(sample, retrieveLambda(sample, notNulArityName, closingBracket, hashtagOnly)));
+
+        return mapping;
+    }
+
+    private GroundLambda retrieveLambda(Sample sample, String notNulArityName, String closingBracket, String hashtagOnly) {
+        return sample.getBall().groundNeurons.stream()
+                .filter(neuron -> neuron instanceof GroundLambda)
+                .filter(neuron ->
+                        neuron.toString().equals(notNulArityName)
+                        || neuron.toString().equals(closingBracket)
+                        || neuron.toString().equals(hashtagOnly)) // we assume that automatically added neurons are unique by name
+                .map(neuron -> (GroundLambda) neuron)
+                .collect(Collectors.toList())
+                .get(0); // there should be only one instance of that lambda predicate within a sample, thus it must be the first one; more or none such lambda node would be a fault
     }
 
 }

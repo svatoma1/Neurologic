@@ -9,7 +9,7 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
  * Created by EL on 19.4.2016.
  */
 public class StructureLearningFactory {
-    public static StructureLearning create(String[] exs, String[] test, String[] rules, String[] pretrainedRules, CommandLine cmd, String[] args) {
+    public static StructureLearnable create(String[] exs, String[] test, String[] rules, String[] pretrainedRules, CommandLine cmd, String[] args) {
         String alg = cmd.getOptionValue("sla");
 
         switch (alg) {

@@ -1,18 +1,16 @@
 package discoverer;
 
-import discoverer.construction.template.LightTemplate;
 import discoverer.crossvalidation.NeuralCrossvalidation;
 import discoverer.crossvalidation.Crossvalidation;
 import discoverer.global.Global;
 import discoverer.global.FileToStringList;
 import discoverer.global.Glogger;
 import discoverer.global.Settings;
-import discoverer.learning.Sample;
 
 import java.util.LinkedList;
 import java.util.List;
 
-import discoverer.structureLearning.StructureLearning;
+import discoverer.structureLearning.StructureLearnable;
 import discoverer.structureLearning.StructureLearningFactory;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -236,7 +234,7 @@ public class Main {
         if (null == cmd.getOptionValue("sla") || defaultStructureLearningAlgorithm.equals(cmd.getOptionValue("sla"))) {
             noStructureLearningLearning(exs, test, rules, pretrainedRules);
         } else {
-            StructureLearning sl = StructureLearningFactory.create(exs, test, rules, pretrainedRules, cmd, args);
+            StructureLearnable sl = StructureLearningFactory.create(exs, test, rules, pretrainedRules, cmd, args);
             sl.learn();
         }
 
@@ -391,7 +389,7 @@ public class Main {
      * @param rules
      * @return
      */
-    private static String[] addFinalLambda(String[] rules) {
+    public static String[] addFinalLambda(String[] rules) {
 
         String[] rls = new String[rules.length + 1];
         for (int i = 0; i < rules.length; i++) {
