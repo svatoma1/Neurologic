@@ -8,17 +8,26 @@ import java.util.List;
 public class Tools {
 
     public static boolean hasConverged(List<Double> errors, Integer longTimeWindow, Integer shortTimeWindow, Double epsilonDifference) {
-        if (longTimeWindow > errors.size()){
+        if (longTimeWindow > errors.size()) {
             return false;
         }
-        return Math.abs(average(errors,longTimeWindow) - average(errors,shortTimeWindow)) < epsilonDifference;
+        return Math.abs(average(errors, longTimeWindow) - average(errors, shortTimeWindow)) < epsilonDifference;
     }
 
     public static double average(List<Double> list, Integer timeWindow) {
-        if (timeWindow > list.size()){
+        if (timeWindow > list.size()) {
             timeWindow = list.size();
         }
-        return list.subList(list.size() - timeWindow,list.size()).stream().mapToDouble(d -> d).average().orElse(0);
+        return list.subList(list.size() - timeWindow, list.size()).stream().mapToDouble(d -> d).average().orElse(0);
+    }
+
+    public static Double convergedError() {
+        return 0.0001;
+    }
+
+    public static boolean isZero(Double value) {
+        double threshold = 0.00000001;
+        return value >= -threshold && value <= threshold;
     }
 
 }

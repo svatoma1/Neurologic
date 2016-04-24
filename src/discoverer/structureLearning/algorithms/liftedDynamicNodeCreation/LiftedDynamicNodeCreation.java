@@ -49,7 +49,6 @@ public class LiftedDynamicNodeCreation implements StructureLearnable {
 
     @Override
     public void learn() {
-        // TODO - ha ha ha, aby to fungovalo tak predpokladam ze je v template rule "finalLambda :- finalKappa"
 
         StructureLearning structureBridge = new StructureLearning();
         String params = "-r " + cmd.getOptionValue("r") + " -e " + cmd.getOptionValue("e");
@@ -70,8 +69,11 @@ public class LiftedDynamicNodeCreation implements StructureLearnable {
 
         grounded = structureBridge.reGroundMe(grounded, template.toArray(new String[template.size()]));
 
+        // debug out
         System.out.println("rules");
         template.forEach(e -> System.out.println("\t" + e));
+        //
+
 
         Map<Long, Double> averagesErrors = new HashMap<>();
         long iteration = 0;

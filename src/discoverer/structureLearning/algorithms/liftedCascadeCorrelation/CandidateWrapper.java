@@ -1,5 +1,6 @@
 package discoverer.structureLearning.algorithms.liftedCascadeCorrelation;
 
+import discoverer.GroundedDataset;
 import discoverer.LiftedDataset;
 import discoverer.structureLearning.logic.Predicate;
 
@@ -13,16 +14,16 @@ public class CandidateWrapper {
     private final Predicate predicate;
     private final List<String> rules;
     private final Double correlation;
-    private final LiftedDataset grounded;
+    private final GroundedDataset grounded;
 
-    public CandidateWrapper(Predicate predicate, List<String> rules, Double correlation, LiftedDataset grounded) {
+    public CandidateWrapper(Predicate predicate, List<String> rules, Double correlation, GroundedDataset grounded) {
         this.predicate = predicate;
         this.rules = rules;
         this.correlation = correlation;
         this.grounded = grounded;
     }
 
-    public LiftedDataset getGrounded() {
+    public GroundedDataset getGrounded() {
         return grounded;
     }
 

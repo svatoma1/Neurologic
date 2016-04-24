@@ -2,6 +2,7 @@ package discoverer.structureLearning;
 
 import discoverer.structureLearning.algorithms.liftedCascadeCorrelation.LiftedCascadeCorrelation;
 import discoverer.structureLearning.algorithms.liftedDynamicNodeCreation.LiftedDynamicNodeCreation;
+import discoverer.structureLearning.algorithms.liftedTopGen.LiftedTopGen;
 import org.apache.commons.cli.CommandLine;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
@@ -20,7 +21,7 @@ public class StructureLearningFactory {
             case "SLF":
                 throw new NotImplementedException();
             case "TopGen":
-                throw new NotImplementedException();
+                return new LiftedTopGen(exs, test, rules, pretrainedRules, cmd, args);
             case "REGENT":
                 throw new NotImplementedException();
             default:

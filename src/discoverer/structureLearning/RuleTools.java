@@ -65,7 +65,7 @@ public class RuleTools {
         allPredicates.addAll(templatePredicates);
         String freshName = generateFreshName(allPredicates);
 
-        double baseWeight = 0.5;
+        double baseWeight = 0.0;
         List<String> rules = basePredicates.stream()
                 .map(predicate -> constructOrRuleWithZeroArity(freshName, predicate, baseWeight))
                 .collect(Collectors.toCollection(ArrayList::new));
